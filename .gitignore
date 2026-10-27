@@ -1,0 +1,12 @@
+# The app code, fetched by the commands at the version in country.json.
+.climweb/
+.climweb.tmp/
+
+# Build output
+build/
+*.apk
+*.aab
+
+# Dependencies and editor/system files
+node_modules/
+.DS_Store

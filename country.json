@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wmo-raf/climweb-weather-app/v1.8.0/schemas/country.schema.json",
+  "schema_version": 1,
+  "core_version": "v1.8.0",
+
+  "app": {
+    "name": "ClimWeb Weather",
+    "ios_bundle_id": "org.example.weather",
+    "android_package": "org.example.weather",
+    "eas_project_id": "",
+    "app_store_url": "",
+    "play_store_url": ""
+  },
+
+  "branding": {
+    "primary_colour": "#0C447C",
+    "secondary_colour": "#226296",
+    "icon": "assets/icon.png",
+    "adaptive_icon_foreground": "assets/adaptive-icon.png",
+    "adaptive_icon_background_colour": "#FFFFFF",
+    "splash_image": "assets/splash.png"
+  },
+
+  "region": {
+    "timezone": "UTC",
+    "bbox": [-180, -90, 180, 90],
+    "geonames_country": "",
+    "default_cities": "data/cities.json"
+  },
+
+  "forecast": {
+    "provider": "yr",
+    "api_url": "https://api.met.no/weatherapi/locationforecast/2.0",
+    "fallback_api_url": "https://api.met.no/weatherapi/locationforecast/2.0",
+    "user_agent": "ClimWeb Weather App"
+  },
+
+  "alerts": {
+    "provider": "cap",
+    "sender_id": ""
+  },
+
+  "defaults": {
+    "units": {
+      "temperature": "celsius",
+      "wind": "kmh",
+      "precipitation": "mm"
+    }
+  },
+
+  "features": {
+    "more_cards": ["favourites"],
+    "review_prompt": true
+  },
+
+  "organisation": {
+    "website": "",
+    "contact_email": "",
+    "partners": []
+  }
+}

@@ -1,0 +1,26 @@
+# Builds this country's app from its settings. Run it from the Actions tab:
+# Actions → Build → Run workflow.
+#
+# The app version comes from "core_version" in country.json, so upgrading
+# the app never requires editing this file.
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: What to build
+        type: choice
+        default: preview-apk
+        options:
+          - preview-apk     # An Android APK to install and test (download it from this run)
+          - store-release   # Android and iOS builds for the app stores (needs EXPO_TOKEN)
+
+jobs:
+  build:
+    # Only build in country repos, not in the template itself.
+    if: github.repository != 'wmo-raf/climweb-weather-app-template'
+    uses: wmo-raf/climweb-weather-app/.github/workflows/country-build.yml@v1
+    with:
+      kind: ${{ inputs.kind }}
+    secrets: inherit
