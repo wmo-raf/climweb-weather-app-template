@@ -36,8 +36,7 @@
   },
 
   "alerts": {
-    "provider": "cap",
-    "sender_id": ""
+    "provider": "cap"
   },
 
   "defaults": {

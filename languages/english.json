@@ -4,6 +4,7 @@
   "native_name": "English",
   "cap_feed_url": "",
   "fallback_cap_feed_url": "",
+  "cap_sender_id": "",
   "translations": {
     "Settings": "Settings",
     "settings.alwaysShowStartPage": "Always Show Start Page",

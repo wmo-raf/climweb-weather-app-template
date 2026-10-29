@@ -44,9 +44,14 @@ Files marked **Template** are kept up to date automatically. Please don't edit t
 ]
 ```
 
-**Alerts:** set `alerts.sender_id` to the sender address in your CAP warnings (the `<sender>` value). Set your CAP feed in `languages/english.json` as `cap_feed_url`, with a backup feed (for example your WMO feed) as `fallback_cap_feed_url`.
+**Alerts:** in `languages/english.json`, set:
+- `cap_feed_url`: your CAP warnings feed in English
+- `fallback_cap_feed_url`: a backup feed, for example your WMO feed
+- `cap_sender_id`: the sender address in those warnings (the `<sender>` value in a warning). Only warnings from this sender are shown, so check it carefully: a wrong value hides every warning.
 
-**Adding a language:** copy `languages/english.json` to a new file, e.g. `languages/swahili.json`. Set `code` (e.g. `"sw"`), `name` (`"Swahili"`), `native_name` (`"Kiswahili"`) and that language's alert feeds, then translate every value under `translations`. Don't change the keys on the left. The app picks the language up automatically.
+The backup feed should use the same sender as the main one.
+
+**Adding a language:** copy `languages/english.json` to a new file, e.g. `languages/swahili.json`. Set `code` (e.g. `"sw"`), `name` (`"Swahili"`), `native_name` (`"Kiswahili"`), that language's alert feeds and its `cap_sender_id` (agencies often use a different sender for each language's feed), then translate every value under `translations`. Don't change the keys on the left. The app picks the language up automatically.
 
 ## Checking, previewing and building
 
