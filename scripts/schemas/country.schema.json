@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "country.schema.json",
+  "title": "ClimWeb Weather App country settings",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "core_version", "app", "branding", "region", "forecast", "alerts", "defaults", "features", "organisation"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "core_version": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+      "errorMessage": "must be an app version like \"v1.8.0\""
+    },
+
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "ios_bundle_id", "android_package", "eas_project_id", "app_store_url", "play_store_url"],
+      "properties": {
+        "name": { "$ref": "#/definitions/text" },
+        "ios_bundle_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+$",
+          "errorMessage": "must be a reverse-domain ID like \"tz.go.meteo.weather\" (letters, digits and hyphens)"
+        },
+        "android_package": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$",
+          "errorMessage": "must be a reverse-domain ID like \"tz.go.meteo.weather\" (each part starts with a letter; letters, digits and underscores only)"
+        },
+        "eas_project_id": {
+          "type": "string",
+          "pattern": "^(|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+          "errorMessage": "must be empty or an EAS project ID like \"1b2c3d4e-0000-4000-8000-123456789abc\""
+        },
+        "app_store_url": { "$ref": "#/definitions/optionalUrl" },
+        "play_store_url": { "$ref": "#/definitions/optionalUrl" }
+      }
+    },
+
+    "branding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_colour", "secondary_colour", "icon", "adaptive_icon_foreground", "adaptive_icon_background_colour", "splash_image"],
+      "properties": {
+        "primary_colour": { "$ref": "#/definitions/colour" },
+        "secondary_colour": { "$ref": "#/definitions/colour" },
+        "icon": { "$ref": "#/definitions/pngPath" },
+        "adaptive_icon_foreground": { "$ref": "#/definitions/pngPath" },
+        "adaptive_icon_background_colour": { "$ref": "#/definitions/colour" },
+        "splash_image": { "$ref": "#/definitions/pngPath" }
+      }
+    },
+
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timezone", "bbox", "geonames_country", "default_cities"],
+      "properties": {
+        "timezone": { "$ref": "#/definitions/text" },
+        "bbox": {
+          "type": "array",
+          "items": [
+            { "type": "number", "minimum": -180, "maximum": 180 },
+            { "type": "number", "minimum": -90, "maximum": 90 },
+            { "type": "number", "minimum": -180, "maximum": 180 },
+            { "type": "number", "minimum": -90, "maximum": 90 }
+          ],
+          "minItems": 4,
+          "maxItems": 4,
+          "errorMessage": "must be [west, south, east, north] in degrees, e.g. [29.3, -11.8, 40.5, -0.9]"
+        },
+        "geonames_country": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "errorMessage": "must be a two-letter country code in capitals, e.g. \"TZ\""
+        },
+        "default_cities": {
+          "type": "string",
+          "pattern": "^data/.+\\.json$",
+          "errorMessage": "must be the path to a .json file under data/"
+        }
+      }
+    },
+
+    "forecast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "api_url", "fallback_api_url", "user_agent"],
+      "properties": {
+        "provider": { "enum": ["yr"] },
+        "api_url": { "$ref": "#/definitions/url" },
+        "fallback_api_url": { "$ref": "#/definitions/url" },
+        "user_agent": { "$ref": "#/definitions/text" }
+      }
+    },
+
+    "alerts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider"],
+      "properties": {
+        "provider": { "enum": ["cap"] }
+      }
+    },
+
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["units"],
+      "properties": {
+        "units": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["temperature", "wind", "precipitation"],
+          "properties": {
+            "temperature": { "enum": ["celsius", "fahrenheit"] },
+            "wind": { "enum": ["kmh", "ms", "mph", "knots"] },
+            "precipitation": { "enum": ["mm", "in"] }
+          }
+        }
+      }
+    },
+
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["more_cards", "review_prompt"],
+      "properties": {
+        "more_cards": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/text" },
+          "uniqueItems": true
+        },
+        "review_prompt": { "type": "boolean" }
+      }
+    },
+
+    "organisation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["website", "contact_email", "partners"],
+      "properties": {
+        "website": { "$ref": "#/definitions/optionalUrl" },
+        "contact_email": {
+          "type": "string",
+          "pattern": "^(|[^@\\s]+@[^@\\s]+\\.[^@\\s]+)$",
+          "errorMessage": "must be empty or an email address"
+        },
+        "partners": { "type": "array" }
+      }
+    }
+  },
+
+  "definitions": {
+    "text": {
+      "type": "string",
+      "pattern": "\\S",
+      "errorMessage": "must not be empty"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://[^\\s'\"<>`]+$",
+      "errorMessage": "must be a full https:// address with no spaces or quotes"
+    },
+    "optionalUrl": {
+      "type": "string",
+      "pattern": "^(|https://[^\\s'\"<>`]+)$",
+      "errorMessage": "must be empty or a full https:// address with no spaces or quotes"
+    },
+    "colour": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "errorMessage": "must be a hex colour like \"#0C447C\""
+    },
+    "pngPath": {
+      "type": "string",
+      "pattern": "^assets/.+\\.png$",
+      "errorMessage": "must be the path to a .png file under assets/"
+    }
+  }
+}

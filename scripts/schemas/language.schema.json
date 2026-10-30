@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "language.schema.json",
+  "title": "ClimWeb Weather App language file",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "name", "native_name", "cap_feed_url", "fallback_cap_feed_url", "cap_sender_id", "translations"],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+      "errorMessage": "must be a language code like \"sw\" or \"pt-BR\""
+    },
+    "name": { "$ref": "#/definitions/text" },
+    "native_name": { "$ref": "#/definitions/text" },
+    "cap_feed_url": { "$ref": "#/definitions/url" },
+    "fallback_cap_feed_url": { "$ref": "#/definitions/url" },
+    "cap_sender_id": {
+      "type": "string",
+      "pattern": "^\\S+$",
+      "errorMessage": "must be the <sender> value from your warnings, with no spaces"
+    },
+    "translations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+
+  "definitions": {
+    "text": {
+      "type": "string",
+      "pattern": "\\S",
+      "errorMessage": "must not be empty"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://[^\\s'\"<>`]+$",
+      "errorMessage": "must be a full https:// address with no spaces or quotes"
+    }
+  }
+}

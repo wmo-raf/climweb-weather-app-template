@@ -4,7 +4,7 @@
   "core_version": "v1.8.0",
 
   "app": {
-    "name": "ClimWeb Weather",
+    "name": "ClimWeb Weather App",
     "ios_bundle_id": "org.example.weather",
     "android_package": "org.example.weather",
     "eas_project_id": "",
@@ -15,17 +15,17 @@
   "branding": {
     "primary_colour": "#0C447C",
     "secondary_colour": "#226296",
-    "icon": "assets/icon.png",
-    "adaptive_icon_foreground": "assets/adaptive-icon.png",
+    "icon": "assets/branding/icon.png",
+    "adaptive_icon_foreground": "assets/branding/adaptive-icon.png",
     "adaptive_icon_background_colour": "#FFFFFF",
-    "splash_image": "assets/splash.png"
+    "splash_image": "assets/branding/splash.png"
   },
 
   "region": {
     "timezone": "UTC",
     "bbox": [-180, -90, 180, 90],
-    "geonames_country": "",
-    "default_cities": "data/cities.json"
+    "geonames_country": "ET",
+    "default_cities": "data/geo/cities.json"
   },
 
   "forecast": {

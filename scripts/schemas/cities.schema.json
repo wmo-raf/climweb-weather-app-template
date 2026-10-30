@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cities.schema.json",
+  "title": "ClimWeb Weather App default cities",
+  "type": "array",
+  "minItems": 5,
+  "maxItems": 5,
+  "errorMessage": { "minItems": "must list exactly 5 cities", "maxItems": "must list exactly 5 cities" },
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["name", "lat", "lon"],
+    "properties": {
+      "name": {
+        "type": "string",
+        "pattern": "\\S",
+        "errorMessage": "must not be empty"
+      },
+      "lat": {
+        "type": "number",
+        "minimum": -90,
+        "maximum": 90,
+        "errorMessage": "must be a latitude in degrees, between -90 and 90"
+      },
+      "lon": {
+        "type": "number",
+        "minimum": -180,
+        "maximum": 180,
+        "errorMessage": "must be a longitude in degrees, between -180 and 180"
+      }
+    }
+  }
+}

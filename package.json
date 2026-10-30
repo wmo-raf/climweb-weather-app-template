@@ -3,8 +3,23 @@
   "private": true,
   "description": "Country settings for the ClimWeb Weather App. Commands only; the app itself is fetched into .climweb/ at the version in country.json.",
   "scripts": {
-    "check": "npx climweb-flavour check",
-    "preview": "npx climweb-flavour preview",
-    "apk": "npx climweb-flavour apk"
+    "validate": "tsx scripts/validate.ts",
+    "prep": "tsx scripts/prep.ts",
+    "runner": "tsx scripts/runner.ts",
+    "android": "tsx scripts/runner.ts android",
+    "ios": "tsx scripts/runner.ts ios"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-errors": "^3.0.0",
+    "ajv-formats": "^3.0.1",
+    "commander": "^15.0.0",
+    "pngjs": "^7.0.0",
+    "trie-search": "^2.2.1",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/yauzl": "^3.4.0",
+    "tsx": "^4.23.15"
   }
 }

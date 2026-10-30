@@ -58,9 +58,19 @@ The backup feed should use the same sender as the main one.
 | Command | What it does |
 |---|---|
 | `npm run check` | Checks your settings and lists anything that needs fixing |
+| `npm run validate` | Checks `country.json`, languages, default cities and images in this repository. Add `-- --fix` to tidy up the JSON files first |
+| `npm run prep` | Downloads place names for `region.geonames_country` from GeoNames into `data/geo/`, then prepares the app in `.climweb/` with your settings, icons, places and languages. Run one part with `-- --only geonames` or `-- --only app` |
+| `npm run android` | Does everything: checks your settings, prepares the app and runs it on an Android phone or emulator. Place names are only downloaded the first time |
+| `npm run ios` | The same, on the iOS simulator (Mac with Xcode only) |
+| `npm run runner -- --only validate,app` | Runs only some of those steps: `validate`, `geonames`, `app`, `run`. Add `geonames` to refresh place names |
 | `npm run preview` | Opens the app with your settings on your phone; changes appear as you save |
 | `npm run preview -- --web` | The same, in your web browser |
 | `npm run apk` | Builds an Android APK you can install and share for testing (needs Docker Desktop) |
+
+> [!IMPORTANT]
+> **Downloads are cached for 5 hours.** `prep`, `android`, `ios` and `runner` reuse anything they downloaded in the last 5 hours: GeoNames place data, the app's code, and its dependencies. This makes running them again quick, but changes published in that time won't be picked up, for example a fix to the app or new GeoNames data. To download everything again, add `--no-cache`, e.g. `npm run android -- --no-cache`.
+>
+> The generated iOS and Android projects (including CocoaPods) are also kept between runs. They're rebuilt only when something they depend on changes, such as your app name, icons or the app version. `--no-cache` rebuilds them too.
 
 **On GitHub:** go to **Actions → Build → Run workflow**, and choose:
 - **`preview-apk`** to build a test APK, which you download from the finished run
