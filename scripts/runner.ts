@@ -29,7 +29,7 @@ import fs from 'fs';
 import path from 'path';
 import { styleText } from 'util';
 import { PrepOptions, STEPS as PREP_STEPS } from './prep';
-import { APP_DIR } from './prep/app';
+import { getAppDir } from './prep/app';
 import { validate } from './validate';
 
 const PLATFORMS = ['android', 'ios'] as const;
@@ -57,9 +57,9 @@ async function runOnDevice({ root, platform, device }: RunnerOptions) {
   if (!platform) throw new Error(`Say which platform to run on: ${PLATFORMS.join(' or ')}`);
   if (platform === 'ios' && process.platform !== 'darwin') throw new Error('iOS builds need a Mac with Xcode');
 
-  const appDir = path.join(root, APP_DIR);
+  const appDir = getAppDir(root);
   if (!fs.existsSync(path.join(appDir, 'node_modules'))) {
-    throw new Error(`The app in ${APP_DIR} isn't prepared yet; run the app step first`);
+    throw new Error(`The app in ${appDir} isn't prepared yet; run the app step first`);
   }
 
   const args = ['expo', `run:${platform}`];

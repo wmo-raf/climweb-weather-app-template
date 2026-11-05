@@ -29,6 +29,16 @@ import { age, isFresh } from './cache';
 
 const APP_REPO = 'https://github.com/wmo-raf/climweb-weather-app.git';
 export const APP_DIR = '.climweb';
+
+/**
+ * On Windows, Android CMake/Ninja builds exceed the 260-char MAX_PATH limit
+ * when .climweb is nested inside a long repository path. Place .climweb at the
+ * root of the current drive (e.g. C:\.climweb or D:\.climweb) on Windows.
+ */
+export function getAppDir(root: string): string {
+  if (process.platform !== 'win32') return path.join(root, APP_DIR);
+  return path.join(path.parse(path.resolve(root)).root, APP_DIR);
+}
 const DEFAULT_REF = 'main';
 
 const LANGUAGES_DIR = 'languages';
@@ -391,6 +401,16 @@ function installDependencies(appDir: string, useCache: boolean) {
   } catch {
     throw new Error('Expo reports packages that don\'t match the app\'s SDK version; this needs fixing in the app repository');
   }
+
+  if (process.platform === 'win32') {
+    const follyFlags = path.join(appDir, 'node_modules/react-native/ReactAndroid/cmake-utils/folly-flags.cmake');
+    if (fs.existsSync(follyFlags)) {
+      const content = fs.readFileSync(follyFlags, 'utf8');
+      if (!content.includes('CMAKE_OBJECT_PATH_MAX')) {
+        fs.writeFileSync(follyFlags, `${content}\nset(CMAKE_OBJECT_PATH_MAX 240)\n`);
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -441,7 +461,7 @@ async function checkNativeProjects(appDir: string, useCache: boolean) {
 // ---------------------------------------------------------------------------
 
 export async function prepApp({ root, ref = DEFAULT_REF, skipInstall, validated, cache = true }: AppOptions): Promise<void> {
-  const appDir = path.join(root, APP_DIR);
+  const appDir = getAppDir(root);
 
   if (validated) {
     logStep(1, 'Settings already validated');
@@ -452,7 +472,7 @@ export async function prepApp({ root, ref = DEFAULT_REF, skipInstall, validated,
   const country = readJson<Country>(path.join(root, 'country.json'));
   const languages = loadLanguages(root);
 
-  logStep(2, `Fetching ${APP_REPO} (${ref}) into ${APP_DIR}`);
+  logStep(2, `Fetching ${APP_REPO} (${ref}) into ${appDir}`);
   const commit = fetchApp(appDir, ref, cache);
   console.error(`      at ${commit}`);
 
