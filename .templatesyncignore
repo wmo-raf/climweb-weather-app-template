@@ -1,0 +1,5 @@
+# Files your country owns. Template updates never change these.
+country.json
+languages/**
+assets/**
+data/**
