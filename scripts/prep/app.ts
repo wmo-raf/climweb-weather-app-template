@@ -15,8 +15,8 @@
  *   8. Keep the ios/ and android/ projects from the last expo run if nothing
  *      they're generated from has changed, so pod install isn't repeated
  *
- * Alert feed settings come from the default language (english.json) until the
- * app supports a CAP feed per language.
+ * Alert feeds aren't part of .env: each language file carries its own, and the
+ * app reads them from there.
  */
 
 import { createHash } from 'crypto';
@@ -90,9 +90,11 @@ interface Country {
   region: { timezone: string; bbox: number[]; default_cities: string };
   forecast: { provider: string; api_url: string; fallback_api_url: string; user_agent: string };
   alerts: { provider: string };
-  defaults: { units: { temperature: string; wind: string; precipitation: string } };
+  defaults: { language?: string; units: { temperature: string; wind: string; precipitation: string } };
   features: { review_prompt: boolean };
 }
+
+type Translations = { [key: string]: string | Translations };
 
 interface Language {
   file: string;
@@ -102,7 +104,8 @@ interface Language {
   cap_feed_url: string;
   fallback_cap_feed_url: string;
   cap_sender_id: string;
-  translations: Record<string, string>;
+  cap_language_aliases?: string[];
+  translations: Translations;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,7 +212,7 @@ function fetchApp(appDir: string, ref: string, useCache: boolean): string {
  * defaults. Fails if the app no longer has one of these variables, so a
  * renamed setting is caught here rather than silently ignored.
  */
-function writeEnv(appDir: string, country: Country, alertsLanguage: Language) {
+function writeEnv(appDir: string, country: Country) {
   const { forecast, region, defaults } = country;
   const values: Record<string, string> = {
     EXPO_PUBLIC_PRIMARY_API_URL: forecast.api_url,
@@ -217,9 +220,7 @@ function writeEnv(appDir: string, country: Country, alertsLanguage: Language) {
     EXPO_PUBLIC_APP_USER_AGENT: forecast.user_agent,
     EXPO_PUBLIC_FORECAST_PROVIDER: forecast.provider,
     EXPO_PUBLIC_ALERTS_PROVIDER: country.alerts.provider,
-    EXPO_PUBLIC_PRIMARY_ALERTS_URL: alertsLanguage.cap_feed_url,
-    EXPO_PUBLIC_FALLBACK_ALERTS_URL: alertsLanguage.fallback_cap_feed_url,
-    EXPO_PUBLIC_APP_ALERTS_SENDER_ID: alertsLanguage.cap_sender_id,
+    EXPO_PUBLIC_DEFAULT_LANGUAGE: defaults.language ?? 'en',
     EXPO_PUBLIC_APP_TIMEZONE: region.timezone,
     EXPO_PUBLIC_APP_COUNTRY_BBOX: region.bbox.join(','),
     EXPO_PUBLIC_DEFAULT_TEMPERATURE_UNIT: defaults.units.temperature,
@@ -321,57 +322,51 @@ function copyAssets(root: string, appDir: string, country: Country) {
 // ---------------------------------------------------------------------------
 // 6. Languages
 
+/** The dotted keys in `base` that `own` doesn't have, e.g. "settings.title". */
+function missingKeys(base: Translations, own: Translations, prefix = ''): string[] {
+  return Object.entries(base).flatMap(([key, value]) => {
+    if (!(key in own)) return [`${prefix}${key}`];
+    const ownValue = own[key];
+    return typeof value === 'object' && typeof ownValue === 'object' ? missingKeys(value, ownValue, `${prefix}${key}.`) : [];
+  });
+}
+
+/** `own` with anything it lacks filled in from `base`. */
+function fillMissing(base: Translations, own: Translations): Translations {
+  const merged = { ...base, ...own };
+  for (const [key, value] of Object.entries(base)) {
+    const ownValue = own[key];
+    if (typeof value === 'object' && typeof ownValue === 'object') merged[key] = fillMissing(value, ownValue);
+  }
+  return merged;
+}
+
 /**
- * Replaces the app's translations with the configured languages and
- * regenerates the LANGUAGES index. English keys the app has but this
- * repository doesn't yet are kept from the app's own english.json, so the app
- * never shows a raw key; they're listed so they can be added here.
+ * Replaces the app's language files with the configured ones. The app finds
+ * every language file in that folder by itself, so nothing else needs
+ * registering. English keys the app has but this repository doesn't yet are
+ * kept from the app's own english.json, so the app never shows a raw key;
+ * they're listed so they can be added here.
  */
 function installLanguages(appDir: string, languages: Language[]) {
   const dir = path.join(appDir, TARGETS.translations);
-  const appEnglish = readJson<Record<string, string>>(path.join(dir, DEFAULT_LANGUAGE_FILE));
+  const appEnglish = readJson<Pick<Language, 'translations'>>(path.join(dir, DEFAULT_LANGUAGE_FILE)).translations;
 
   for (const name of fs.readdirSync(dir).filter(name => name.endsWith('.json'))) {
     fs.rmSync(path.join(dir, name));
   }
 
-  const entries: string[] = [];
-  const imports: string[] = [];
-  for (const language of languages) {
-    let resources = language.translations;
-    if (language.file === DEFAULT_LANGUAGE_FILE) {
-      const missing = Object.keys(appEnglish).filter(key => !(key in resources));
+  for (const { file, ...language } of languages) {
+    let { translations } = language;
+    if (file === DEFAULT_LANGUAGE_FILE) {
+      const missing = missingKeys(appEnglish, translations);
       if (missing.length) {
         console.error(styleText('yellow', `      ⚠ ${LANGUAGES_DIR}/${DEFAULT_LANGUAGE_FILE} is missing ${missing.length} key(s) the app uses; using the app's English text for: ${missing.join(', ')}`));
-        resources = { ...Object.fromEntries(missing.map(key => [key, appEnglish[key]])), ...resources };
+        translations = fillMissing(appEnglish, translations);
       }
     }
-    writeJson(path.join(dir, language.file), resources);
-
-    const identifier = `${language.code.replace(/\W/g, '_')}Resources`;
-    imports.push(`import ${identifier} from './${language.file}';`);
-    entries.push([
-      `  ${JSON.stringify(language.code)}: {`,
-      `    label: ${JSON.stringify(language.native_name)},`,
-      `    name: ${JSON.stringify(language.name)},`,
-      `    nativeName: ${JSON.stringify(language.native_name)},`,
-      `    resources: ${identifier},`,
-      `  },`,
-    ].join('\n'));
+    writeJson(path.join(dir, file), { ...language, translations });
   }
-
-  const index = [
-    '// Generated by scripts/prep in the country repository. Do not edit; change languages/ there instead.',
-    ...imports,
-    '',
-    'export const LANGUAGES = {',
-    ...entries,
-    '};',
-    '',
-    'export type LanguageKey = keyof typeof LANGUAGES;',
-    '',
-  ].join('\n');
-  fs.writeFileSync(path.join(dir, 'index.ts'), index);
 }
 
 // ---------------------------------------------------------------------------
@@ -476,8 +471,8 @@ export async function prepApp({ root, ref = DEFAULT_REF, skipInstall, validated,
   const commit = fetchApp(appDir, ref, cache);
   console.error(`      at ${commit}`);
 
-  logStep(3, `Writing .env (alert feeds from ${LANGUAGES_DIR}/${languages[0].file})`);
-  writeEnv(appDir, country, languages[0]);
+  logStep(3, 'Writing .env');
+  writeEnv(appDir, country);
 
   logStep(4, 'Updating app.json');
   updateAppJson(appDir, country);

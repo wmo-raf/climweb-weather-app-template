@@ -40,6 +40,7 @@
   },
 
   "defaults": {
+    "language": "en",
     "units": {
       "temperature": "celsius",
       "wind": "kmh",

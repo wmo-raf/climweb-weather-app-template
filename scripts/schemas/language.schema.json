@@ -8,22 +8,23 @@
   "properties": {
     "code": {
       "type": "string",
-      "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
-      "errorMessage": "must be a language code like \"sw\" or \"pt-BR\""
+      "pattern": "^[a-z]{2,3}$",
+      "errorMessage": "must be a 2 or 3 letter lowercase language code like \"sw\""
     },
     "name": { "$ref": "#/definitions/text" },
     "native_name": { "$ref": "#/definitions/text" },
-    "cap_feed_url": { "$ref": "#/definitions/url" },
-    "fallback_cap_feed_url": { "$ref": "#/definitions/url" },
+    "cap_feed_url": { "$ref": "#/definitions/feed" },
+    "fallback_cap_feed_url": { "$ref": "#/definitions/feed" },
     "cap_sender_id": {
       "type": "string",
-      "pattern": "^\\S+$",
+      "pattern": "^\\S*$",
       "errorMessage": "must be the <sender> value from your warnings, with no spaces"
     },
-    "translations": {
-      "type": "object",
-      "additionalProperties": { "type": "string" }
-    }
+    "cap_language_aliases": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/text" }
+    },
+    "translations": { "$ref": "#/definitions/translations" }
   },
 
   "definitions": {
@@ -32,11 +33,16 @@
       "pattern": "\\S",
       "errorMessage": "must not be empty"
     },
-    "url": {
+    "feed": {
       "type": "string",
-      "format": "uri",
-      "pattern": "^https://[^\\s'\"<>`]+$",
-      "errorMessage": "must be a full https:// address with no spaces or quotes"
+      "pattern": "^(https://[^\\s'\"<>`]+)?$",
+      "errorMessage": "must be empty or a full https:// address with no spaces or quotes"
+    },
+    "translations": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [{ "type": "string" }, { "$ref": "#/definitions/translations" }]
+      }
     }
   }
 }

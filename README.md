@@ -15,7 +15,7 @@ This repository holds **your country's settings** for the [ClimWeb Weather App](
 | File or folder | What it's for | Who edits it |
 |---|---|---|
 | `country.json` | Your app's settings: name, colours, region, forecast and alerts | You |
-| `languages/` | One file per language. `english.json` is required, and English is the default language. | You |
+| `languages/` | One file per language. `english.json` is required. | You |
 | `assets/` | App icon, Android icon and splash logo | You |
 | `data/cities.json` | Cities shown when a user's location isn't available | You |
 | `package.json` | Commands to check, preview and build | Template |
@@ -49,9 +49,11 @@ Files marked **Template** are kept up to date automatically. Please don't edit t
 - `fallback_cap_feed_url`: a backup feed, for example your WMO feed
 - `cap_sender_id`: the sender address in those warnings (the `<sender>` value in a warning). Only warnings from this sender are shown, so check it carefully: a wrong value hides every warning.
 
-The backup feed should use the same sender as the main one.
+The backup feed should use the same sender as the main one. Each language has its own feed settings; a language with an empty `cap_feed_url` uses the default language's feed.
 
-**Adding a language:** copy `languages/english.json` to a new file, e.g. `languages/swahili.json`. Set `code` (e.g. `"sw"`), `name` (`"Swahili"`), `native_name` (`"Kiswahili"`), that language's alert feeds and its `cap_sender_id` (agencies often use a different sender for each language's feed), then translate every value under `translations`. Don't change the keys on the left. The app picks the language up automatically.
+**Adding a language:** copy `languages/english.json` to a new file, e.g. `languages/swahili.json`. Set `code` (e.g. `"sw"`), `name` (`"Swahili"`), `native_name` (`"Kiswahili"`), that language's alert feeds and its `cap_sender_id` (agencies often use a different sender for each language's feed), then translate every value under `translations`. Don't change the keys on the left. If your alerts use another code for the language, such as `swa`, list it in `cap_language_aliases`. The app picks the language up automatically.
+
+**Default language:** `defaults.language` in `country.json` is the `code` of the language a fresh install starts in. People can still change it in the app.
 
 ## Checking, previewing and building
 

@@ -111,6 +111,11 @@
       "additionalProperties": false,
       "required": ["units"],
       "properties": {
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}$",
+          "errorMessage": "must be the code of one of your language files, like \"en\""
+        },
         "units": {
           "type": "object",
           "additionalProperties": false,

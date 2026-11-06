@@ -225,13 +225,23 @@ function sanitiseCities(cities: Json): Json {
   });
 }
 
-function sanitiseTranslations(language: Json, englishKeys: string[]): Json {
+/** Translations nest; this lists them by dotted key, e.g. "settings.title". */
+function flatten(translations: Record<string, Json>, prefix = ''): Record<string, Json> {
+  return Object.fromEntries(Object.entries(translations).flatMap(([key, value]) => (
+    isObject(value) ? Object.entries(flatten(value, `${prefix}${key}.`)) : [[`${prefix}${key}`, value]]
+  )));
+}
+
+function orderLike(translations: Record<string, Json>, english: Record<string, Json>): Record<string, Json> {
+  return Object.fromEntries(Object.keys(english).filter(key => key in translations).map(key => {
+    const value = translations[key], source = english[key];
+    return [key, isObject(value) && isObject(source) ? orderLike(value, source) : value];
+  }));
+}
+
+function sanitiseTranslations(language: Json, english: Record<string, Json>): Json {
   if (!isObject(language) || !isObject(language.translations)) return language;
-  const translations = language.translations;
-  const ordered = Object.fromEntries(
-    englishKeys.filter(key => key in translations).map(key => [key, translations[key]]),
-  );
-  return { ...language, translations: ordered };
+  return { ...language, translations: orderLike(language.translations, english) };
 }
 
 // ---------------------------------------------------------------------------
@@ -291,28 +301,36 @@ function checkCountry(root: string, country: Json, validate: ValidateFunction, r
 function checkLanguage(
   file: string,
   language: Json,
-  english: Record<string, string> | undefined,
+  english: Record<string, Json> | undefined,
   validate: ValidateFunction,
   report: Report,
 ) {
   validateSchema(validate, language, file, report);
   if (!isObject(language) || !isObject(language.translations)) return;
 
-  const translations = language.translations;
+  if (language.cap_feed_url && !language.cap_sender_id) {
+    report.error(file, 'cap_sender_id is required when cap_feed_url is set; without it every warning is hidden');
+  }
+  if (language.fallback_cap_feed_url && !language.cap_feed_url) {
+    report.error(file, 'fallback_cap_feed_url needs a cap_feed_url too');
+  }
+
+  const translations = flatten(language.translations);
   for (const [key, value] of Object.entries(translations)) {
     if (typeof value === 'string' && !value.trim()) report.error(file, `translation "${key}" is empty`);
   }
   if (!english) return;
 
-  const missing = Object.keys(english).filter(key => !(key in translations));
-  const extra = Object.keys(translations).filter(key => !(key in english));
+  const source = flatten(english);
+  const missing = Object.keys(source).filter(key => !(key in translations));
+  const extra = Object.keys(translations).filter(key => !(key in source));
   for (const key of missing) report.error(file, `missing translation "${key}"`);
   for (const key of extra) report.error(file, `unknown translation "${key}" (not in ${DEFAULT_LANGUAGE_FILE}; --fix removes it)`);
 
-  for (const [key, source] of Object.entries(english)) {
+  for (const [key, text] of Object.entries(source)) {
     const target = translations[key];
-    if (typeof source !== 'string' || typeof target !== 'string') continue;
-    const expected = [...placeholders(source)].sort().join(', ');
+    if (typeof text !== 'string' || typeof target !== 'string') continue;
+    const expected = [...placeholders(text)].sort().join(', ');
     const actual = [...placeholders(target)].sort().join(', ');
     if (expected !== actual) {
       report.error(file, `translation "${key}" must use the placeholders {{${expected || '–'}}} exactly as in English, found {{${actual || '–'}}}`);
@@ -455,8 +473,9 @@ export function validate(root: string, fix = false): { report: Report; fixed: st
   }
   languageFiles.sort((a, b) => Number(b === DEFAULT_LANGUAGE_FILE) - Number(a === DEFAULT_LANGUAGE_FILE));
 
-  let english: Record<string, string> | undefined;
+  let english: Record<string, Json> | undefined;
   const codes = new Map<string, string>();
+  const feeds = new Set<string>();
   for (const name of languageFiles) {
     const file = `${LANGUAGES_DIR}/${name}`;
     let language = readJson(root, file, report);
@@ -464,7 +483,7 @@ export function validate(root: string, fix = false): { report: Report; fixed: st
 
     if (opts.fix) {
       let sanitised = sanitiseStrings(language);
-      if (english && name !== DEFAULT_LANGUAGE_FILE) sanitised = sanitiseTranslations(sanitised, Object.keys(english));
+      if (english && name !== DEFAULT_LANGUAGE_FILE) sanitised = sanitiseTranslations(sanitised, english);
       writeJsonIfChanged(root, file, language, sanitised, fixed);
       language = sanitised;
     }
@@ -472,7 +491,7 @@ export function validate(root: string, fix = false): { report: Report; fixed: st
     if (name === DEFAULT_LANGUAGE_FILE) {
       checkLanguage(file, language, undefined, validateLanguage, report);
       if (isObject(language) && isObject(language.translations)) {
-        english = language.translations as Record<string, string>;
+        english = language.translations;
       }
       if (isObject(language) && language.code !== 'en') report.error(file, 'code must be "en"');
     } else {
@@ -483,7 +502,17 @@ export function validate(root: string, fix = false): { report: Report; fixed: st
       const other = codes.get(language.code);
       if (other) report.error(file, `code "${language.code}" is already used by ${other}`);
       else codes.set(language.code, file);
+      if (language.cap_feed_url) feeds.add(language.code);
     }
+  }
+
+  // Languages without a feed of their own use the default language's
+  const defaults = isObject(country) && isObject(country.defaults) ? country.defaults : undefined;
+  const defaultLanguage = typeof defaults?.language === 'string' ? defaults.language : 'en';
+  if (!codes.has(defaultLanguage)) {
+    if (languageFiles.length) report.error('country.json', `defaults.language "${defaultLanguage}" has no file in ${LANGUAGES_DIR}/`);
+  } else if (!feeds.has(defaultLanguage)) {
+    report.error(codes.get(defaultLanguage)!, 'cap_feed_url is required for the default language, because languages without a feed use it');
   }
 
   // Default cities
