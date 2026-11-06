@@ -7,10 +7,12 @@
  *   geonames  Download and convert place names into data/geo (scripts/prep/geonames.ts)
  *   app       Prepare the app in .climweb (scripts/prep/app.ts)
  *   run       Build the app and run it on Android or iOS with expo run
+ *   apk       Build an Android APK, signed release or debug (scripts/apk.ts)
  *
- * By default every step runs except geonames, which only runs when data/geo
- * has no place data yet; GeoNames changes daily, so refreshing it on every
- * run would rewrite data/geo each time. Name it with --only to refresh.
+ * By default every step runs except apk and geonames. --apk runs apk instead
+ * of run. geonames only runs when data/geo has no place data yet; GeoNames
+ * changes daily, so refreshing it on every run would rewrite data/geo each
+ * time. Name it with --only to refresh.
  *
  * Downloads (GeoNames files, the app source and its dependencies) are cached
  * for 5 hours, so running this again soon after is quick. Pass --no-cache to
@@ -21,13 +23,16 @@
  *   npm run ios -- --device "iPhone 16"
  *   npm run runner -- --only validate,app
  *   npm run android -- --only geonames,app,run --ref some-branch
+ *   npm run apk                         # same as: npx tsx scripts/runner.ts --apk
+ *   npm run apk -- --variant debug --out ~/Desktop
  */
 
 import { spawn } from 'child_process';
-import { Argument, Command } from 'commander';
+import { Argument, Command, Option } from 'commander';
 import fs from 'fs';
 import path from 'path';
 import { styleText } from 'util';
+import { APK_VARIANTS, ApkVariant, buildApk } from './apk';
 import { PrepOptions, STEPS as PREP_STEPS } from './prep';
 import { getAppDir } from './prep/app';
 import { validate } from './validate';
@@ -41,6 +46,9 @@ const PLACE_DATA = ['data/geo/geonames.json', 'data/geo/dataset.json', 'data/geo
 interface RunnerOptions extends PrepOptions {
   platform?: Platform;
   device?: string;
+  apk?: boolean;
+  variant?: ApkVariant;
+  out?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -76,11 +84,14 @@ const STEPS: Record<string, (opts: RunnerOptions) => Promise<void>> = {
   geonames: PREP_STEPS.geonames,
   app: PREP_STEPS.app,
   run: runOnDevice,
+  apk: buildApk,
 };
 
-function defaultSteps(root: string): string[] {
+function defaultSteps(root: string, apk?: boolean): string[] {
   const hasPlaceData = PLACE_DATA.every(file => fs.existsSync(path.join(root, file)));
-  return Object.keys(STEPS).filter(step => step !== 'geonames' || !hasPlaceData);
+  return Object.keys(STEPS)
+    .filter(step => step !== 'geonames' || !hasPlaceData)
+    .filter(step => step !== (apk ? 'run' : 'apk'));
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +102,9 @@ async function main() {
     .addArgument(new Argument('[platform]', 'where to run the app (needed for the run step)').choices(PLATFORMS))
     .option('--only <steps>', 'comma-separated steps to run', (value: string) => value.split(',').map(s => s.trim()))
     .option('--device <name>', 'device or simulator to run on (default: Expo asks or picks one)')
+    .option('--apk', 'build an Android APK instead of running the app')
+    .addOption(new Option('--variant <type>', 'APK to build: release is signed with your key, generated the first time; debug needs no key').choices(APK_VARIANTS).default('release'))
+    .option('--out <dir>', 'folder for the APK (default: build)')
     .option('--ref <branch>', 'app branch, tag or commit to prepare (default: main)')
     .option('--skip-install', "don't install the app's dependencies")
     .option('--no-cache', 'fetch everything from the internet again instead of reusing downloads from the last 5 hours')
@@ -108,7 +122,7 @@ async function main() {
     throw new Error(`Unknown step(s): ${unknown.join(', ')}. Steps: ${Object.keys(STEPS).join(', ')}`);
   }
 
-  const selected = opts.only ?? defaultSteps(opts.root);
+  const selected = opts.only ?? defaultSteps(opts.root, opts.apk);
   const steps = Object.keys(STEPS).filter(step => selected.includes(step));
   // Fail before the slow steps rather than after them
   if (steps.includes('run') && !platform) {

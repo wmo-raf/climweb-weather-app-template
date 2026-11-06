@@ -108,7 +108,7 @@ interface Language {
 // ---------------------------------------------------------------------------
 // Helpers
 
-function run(command: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv) {
+export function run(command: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv) {
   execFileSync(command, args, {
     cwd,
     stdio: 'inherit',

@@ -62,15 +62,20 @@ The backup feed should use the same sender as the main one.
 | `npm run prep` | Downloads place names for `region.geonames_country` from GeoNames into `data/geo/`, then prepares the app in `.climweb/` with your settings, icons, places and languages. Run one part with `-- --only geonames` or `-- --only app` |
 | `npm run android` | Does everything: checks your settings, prepares the app and runs it on an Android phone or emulator. Place names are only downloaded the first time |
 | `npm run ios` | The same, on the iOS simulator (Mac with Xcode only) |
-| `npm run runner -- --only validate,app` | Runs only some of those steps: `validate`, `geonames`, `app`, `run`. Add `geonames` to refresh place names |
+| `npm run runner -- --only validate,app` | Runs only some of those steps: `validate`, `geonames`, `app`, `run`, `apk`. Add `geonames` to refresh place names |
 | `npm run preview` | Opens the app with your settings on your phone; changes appear as you save |
 | `npm run preview -- --web` | The same, in your web browser |
-| `npm run apk` | Builds an Android APK you can install and share for testing (needs Docker Desktop) |
+| `npm run apk` | Does everything up to a signed release APK you can install and share: checks your settings, prepares the app and builds it into `build/`. Needs Java and the Android SDK. The first run generates a signing key in `signing/` (see below) |
+| `npm run apk -- --variant debug` | The same, but a debug APK for developers. It needs no key of yours, and it loads the app from a running Expo dev server, so it's no use for sharing with testers |
+| `npm run apk -- --out <folder>` | Puts the APK in another folder. Works with either variant |
 
 > [!IMPORTANT]
 > **Downloads are cached for 5 hours.** `prep`, `android`, `ios` and `runner` reuse anything they downloaded in the last 5 hours: GeoNames place data, the app's code, and its dependencies. This makes running them again quick, but changes published in that time won't be picked up, for example a fix to the app or new GeoNames data. To download everything again, add `--no-cache`, e.g. `npm run android -- --no-cache`.
 >
 > The generated iOS and Android projects (including CocoaPods) are also kept between runs. They're rebuilt only when something they depend on changes, such as your app name, icons or the app version. `--no-cache` rebuilds them too.
+
+> [!WARNING]
+> **Back up the `signing/` folder.** Phones only accept an update signed with the same key as the app they have, so if you lose this folder, anyone with your APK has to uninstall the app, losing its settings, to get a new version. The folder is ignored by git and is never uploaded, so your copy is the only one. Keep the backup somewhere private: anyone with the key can sign apps as you.
 
 **On GitHub:** go to **Actions → Build → Run workflow**, and choose:
 - **`preview-apk`** to build a test APK, which you download from the finished run
@@ -86,7 +91,7 @@ When this template improves, a pull request titled **"Template updates from clim
 
 ## Store publishing and credentials
 
-Signing keys, app store accounts and Firebase files are **never** stored in this repository. They're set up once in your organisation's EAS project and GitHub secrets (`EXPO_TOKEN`), usually by your IT team together with the ClimWeb team.
+Signing keys, app store accounts and Firebase files are **never** stored in this repository. The key that `npm run apk` generates stays on your computer and is for APKs you share yourself, not for app store builds. Store credentials are set up once in your organisation's EAS project and GitHub secrets (`EXPO_TOKEN`), usually by your IT team together with the ClimWeb team.
 
 ## Getting help
 
