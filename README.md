@@ -2,7 +2,7 @@
 
 This repository holds **your country's settings** for the [ClimWeb Weather App](https://github.com/wmo-raf/climweb-weather-app): its name, colours, icons, languages, alert feeds and region. There is no app code here. The app is fetched automatically at the version you choose, and your settings are applied to it.
 
-> **Status:** the commands (`npm run …`) and the build workflow depend on tooling still being built in the main app repository. The file layout below is final; the commands will work once that tooling is released.
+> **Status:** the GitHub build workflow (`.github/workflows/build.yml`) depends on a shared workflow still being built in the main app repository. The `npm run …` commands below work today.
 
 ## Getting started
 
@@ -17,8 +17,9 @@ This repository holds **your country's settings** for the [ClimWeb Weather App](
 | `country.json` | Your app's settings: name, colours, region, forecast and alerts | You |
 | `languages/` | One file per language. `english.json` is required. | You |
 | `assets/` | App icon, Android icon and splash logo | You |
-| `data/cities.json` | Cities shown when a user's location isn't available | You |
-| `package.json` | Commands to check, preview and build | Template |
+| `data/geo/cities.json` | Cities shown when a user's location isn't available (the file named by `region.default_cities`) | You |
+| `data/geo/` (other files) | Place search data, generated from GeoNames by `npm run prep` | Generated |
+| `package.json` | Commands to check, prepare, run and build | Template |
 | `.github/workflows/` | Builds on GitHub, and template updates | Template |
 
 Files marked **Template** are kept up to date automatically. Please don't edit them; anything you need to change belongs in `country.json`.
@@ -36,11 +37,14 @@ Files marked **Template** are kept up to date automatically. Please don't edit t
 
 **Region:** in `region`, set your `timezone` (e.g. `"Africa/Dar_es_Salaam"`), the `bbox` around your country as `[west, south, east, north]`, and `geonames_country`, your two-letter country code (e.g. `"TZ"`), used to build the place search.
 
-**Default cities:** list them in `data/cities.json`:
+**Default cities:** list exactly five in `data/geo/cities.json`, the file `region.default_cities` points to. Each must be inside your `bbox`:
 ```json
 [
   { "name": "Dodoma", "lat": -6.163, "lon": 35.751 },
-  { "name": "Dar es Salaam", "lat": -6.792, "lon": 39.208 }
+  { "name": "Dar es Salaam", "lat": -6.792, "lon": 39.208 },
+  { "name": "Mwanza", "lat": -2.516, "lon": 32.9 },
+  { "name": "Arusha", "lat": -3.387, "lon": 36.683 },
+  { "name": "Mbeya", "lat": -8.9, "lon": 33.45 }
 ]
 ```
 
@@ -59,14 +63,11 @@ The backup feed should use the same sender as the main one. Each language has it
 
 | Command | What it does |
 |---|---|
-| `npm run check` | Checks your settings and lists anything that needs fixing |
 | `npm run validate` | Checks `country.json`, languages, default cities and images in this repository. Add `-- --fix` to tidy up the JSON files first |
 | `npm run prep` | Downloads place names for `region.geonames_country` from GeoNames into `data/geo/`, then prepares the app in `.climweb/` with your settings, icons, places and languages. Run one part with `-- --only geonames` or `-- --only app` |
 | `npm run android` | Does everything: checks your settings, prepares the app and runs it on an Android phone or emulator. Place names are only downloaded the first time |
 | `npm run ios` | The same, on the iOS simulator (Mac with Xcode only) |
 | `npm run runner -- --only validate,app` | Runs only some of those steps: `validate`, `geonames`, `app`, `run`, `apk`. Add `geonames` to refresh place names |
-| `npm run preview` | Opens the app with your settings on your phone; changes appear as you save |
-| `npm run preview -- --web` | The same, in your web browser |
 | `npm run apk` | Does everything up to a signed release APK you can install and share: checks your settings, prepares the app and builds it into `build/`. Needs Java and the Android SDK. The first run generates a signing key in `signing/` (see below) |
 | `npm run apk -- --variant debug` | The same, but a debug APK for developers. It needs no key of yours, and it loads the app from a running Expo dev server, so it's no use for sharing with testers |
 | `npm run apk -- --out <folder>` | Puts the APK in another folder. Works with either variant |
@@ -85,7 +86,7 @@ The backup feed should use the same sender as the main one. Each language has it
 
 ## Upgrading the app
 
-Change `core_version` in `country.json` to the new version, e.g. `"v1.9.0"`, then run `npm run check`. If the new version needs changes to your settings, the check explains what to change.
+Change `core_version` in `country.json` to the new version, e.g. `"v1.9.0"`, then run `npm run validate` to check your settings, followed by `npm run prep` to fetch and prepare the new version.
 
 ## Template updates
 
