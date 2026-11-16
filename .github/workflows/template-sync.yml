@@ -1,0 +1,30 @@
+# Keeps this repo up to date with the template it was created from. When the
+# template changes, this opens a pull request with the changes for you to
+# review and merge. Your settings (country.json, languages/, assets/, data/)
+# are never touched; see .templatesyncignore.
+#
+# Needs, once per organisation: Settings → Actions → General →
+# "Allow GitHub Actions to create and approve pull requests".
+name: Template updates
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    # Only in country repos, not in the template itself.
+    if: github.repository != 'wmo-raf/climweb-weather-app-template'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: AndreasAugustin/actions-template-sync@v2
+        with:
+          source_repo_path: wmo-raf/climweb-weather-app-template
+          upstream_branch: main
+          pr_title: "Template updates from climweb-weather-app-template"

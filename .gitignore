@@ -1,0 +1,15 @@
+# The app code, fetched by the commands at the version in country.json.
+.climweb/
+.climweb.tmp/
+
+# The APK signing key from npm run apk. Back this up; never commit it.
+signing/
+
+# Build output
+build/
+*.apk
+*.aab
+
+# Dependencies and editor/system files
+node_modules/
+.DS_Store
