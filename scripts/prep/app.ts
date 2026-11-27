@@ -91,7 +91,7 @@ interface Country {
   forecast: { provider: string; api_url: string; fallback_api_url: string; user_agent: string };
   alerts: { provider: string };
   defaults: { language?: string; units: { temperature: string; wind: string; precipitation: string } };
-  features: { review_prompt: boolean };
+  features: { more_cards: string[]; review_prompt: boolean };
 }
 
 type Translations = { [key: string]: string | Translations };
@@ -220,6 +220,8 @@ function writeEnv(appDir: string, country: Country) {
     EXPO_PUBLIC_APP_USER_AGENT: forecast.user_agent,
     EXPO_PUBLIC_FORECAST_PROVIDER: forecast.provider,
     EXPO_PUBLIC_ALERTS_PROVIDER: country.alerts.provider,
+    // Favourites is always rendered by the More tab; only configure plugins.
+    EXPO_PUBLIC_MORE_PLUGINS: country.features.more_cards.filter(card => card !== 'favourites').join(','),
     EXPO_PUBLIC_DEFAULT_LANGUAGE: defaults.language ?? 'en',
     EXPO_PUBLIC_APP_TIMEZONE: region.timezone,
     EXPO_PUBLIC_APP_COUNTRY_BBOX: region.bbox.join(','),
